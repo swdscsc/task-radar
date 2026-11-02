@@ -1,0 +1,132 @@
+<view class="page {{dark ? 'page-dark' : 'page-light'}}">
+
+    <!-- ============ 输入态 ============ -->
+    <block wx:if="{{viewState === 'input'}}">
+        <view class="hero">
+            <text class="eyebrow">办事雷达 · TaskCard</text>
+            <text class="title">长通知，变成一张办事卡</text>
+            <text class="subtitle">粘贴通知原文，或截图上传自动识别，AI 抽出截止时间、待办、材料和待确认问题。</text>
+        </view>
+
+        <view class="card composer">
+            <view class="composer-label">
+                <text>把通知原文粘到这里</text>
+                <text class="composer-hint">最多 5000 字</text>
+            </view>
+            <textarea
+                class="notice-input"
+                value="{{inputText}}"
+                maxlength="{{maxLen}}"
+                placeholder="例如：XX大学大创项目申报通知，截止2026年11月20日17:00前……"
+                bindinput="onInput"
+                auto-height
+            ></textarea>
+            <view class="composer-foot">
+                <text class="counter"><text class="counter-num">{{charCount}}</text>/{{maxLen}}</text>
+                <view class="composer-actions">
+                    <button class="mini-btn" size="mini" bindtap="clearInput">清空</button>
+                    <button class="mini-btn mini-green" size="mini" loading="{{ocrLoading}}" bindtap="chooseScreenshot">{{ocrLoading ? '识别中' : '截图识别'}}</button>
+                    <button class="mini-btn mini-primary" size="mini" loading="{{parsing}}" bindtap="generate">{{parsing ? '生成中' : '生成办事卡'}}</button>
+                </view>
+            </view>
+        </view>
+
+        <view class="card error-box" wx:if="{{errorMsg}}">
+            <text class="error-text">{{errorMsg}}</text>
+        </view>
+
+        <view class="samples">
+            <text class="section-title">没有现成通知？先试试示例</text>
+            <view class="sample-grid">
+                <view class="sample-item" wx:for="{{samples}}" wx:key="id">
+                    <text class="sample-title">{{item.title}}</text>
+                    <text class="sample-desc">{{item.desc}}</text>
+                    <view class="sample-btns">
+                        <button class="sample-btn" size="mini" data-id="{{item.id}}" bindtap="useSample">填入</button>
+                        <button class="sample-btn sample-btn-ghost" size="mini" data-id="{{item.id}}" bindtap="previewSample">看示例卡</button>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </block>
+
+    <!-- ============ 结果态 ============ -->
+    <block wx:else>
+        <view class="result-head">
+            <button class="back-btn" size="mini" bindtap="back">← 返回</button>
+            <text class="result-cat">{{card.category || '其他'}}</text>
+        </view>
+
+        <view class="sample-banner" wx:if="{{samplePreview}}">
+            <text>示例预览 · 内置演示卡，非真实 AI 解析，仅供展示样式</text>
+        </view>
+
+        <view class="card">
+            <text class="card-title">{{card.title}}</text>
+            <text class="card-summary" wx:if="{{card.summary}}">{{card.summary}}</text>
+
+            <view class="block" wx:if="{{card.deadline && card.deadline.original_text}}">
+                <text class="block-title">截止时间</text>
+                <view class="deadline {{card.deadline.needs_confirmation ? 'need-confirm' : ''}}">
+                    <text class="deadline-text">{{card.deadline.normalized_date ? card.deadline.normalized_date : card.deadline.original_text}}</text>
+                    <text class="badge" wx:if="{{card.deadline.needs_confirmation}}">需确认</text>
+                </view>
+                <text class="quote" wx:if="{{card.deadline.source_quote}}">依据：{{card.deadline.source_quote}}</text>
+            </view>
+
+            <view class="block" wx:if="{{card.tasks.length > 0}}">
+                <text class="block-title">待办事项</text>
+                <view class="item" wx:for="{{card.tasks}}" wx:key="id" data-index="{{index}}" bindtap="toggleTask">
+                    <view class="checkbox {{item.completed ? 'checked' : ''}}">
+                        <text wx:if="{{item.completed}}">✓</text>
+                    </view>
+                    <view class="item-body">
+                        <text class="item-text {{item.completed ? 'done' : ''}}">{{item.title}}</text>
+                        <text class="badge inline" wx:if="{{item.needs_confirmation}}">需确认</text>
+                        <text class="quote" wx:if="{{item.source_quote}}">依据：{{item.source_quote}}</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.materials.length > 0}}">
+                <text class="block-title">需要材料</text>
+                <view class="item" wx:for="{{card.materials}}" wx:key="id" data-index="{{index}}" bindtap="toggleMaterial">
+                    <view class="checkbox {{item.completed ? 'checked' : ''}}">
+                        <text wx:if="{{item.completed}}">✓</text>
+                    </view>
+                    <view class="item-body">
+                        <text class="item-text {{item.completed ? 'done' : ''}}">{{item.name}}</text>
+                        <text class="badge inline" wx:if="{{item.needs_confirmation}}">需确认</text>
+                        <text class="quote" wx:if="{{item.source_quote}}">依据：{{item.source_quote}}</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.steps.length > 0}}">
+                <text class="block-title">办理步骤</text>
+                <view class="step" wx:for="{{card.steps}}" wx:key="id">
+                    <text class="step-num">{{index + 1}}</text>
+                    <view class="item-body">
+                        <text class="item-text">{{item.text}}</text>
+                        <text class="quote" wx:if="{{item.source_quote}}">依据：{{item.source_quote}}</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.questions_to_confirm.length > 0}}">
+                <text class="block-title">需要你确认</text>
+                <view class="question" wx:for="{{card.questions_to_confirm}}" wx:key="id">
+                    <text class="q-text">• {{item.question}}</text>
+                    <text class="q-reason" wx:if="{{item.reason}}">{{item.reason}}</text>
+                </view>
+            </view>
+        </view>
+
+        <view class="result-actions">
+            <button class="act-btn" wx:if="{{!samplePreview}}" bindtap="saveCard">{{savedId ? '已保存' : '保存到我的卡'}}</button>
+            <view class="act-btn disabled" wx:else>示例预览不可保存</view>
+            <button class="act-btn ghost" bindtap="copyCard">复制文本</button>
+        </view>
+    </block>
+
+</view>

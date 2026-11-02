@@ -1,0 +1,106 @@
+page {
+    min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+button {
+    border-radius: 12rpx;
+}
+
+/* ===== 主题变量（对齐网页版办事雷达设计稿） ===== */
+.page-light {
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --surface-2: #F2F2F2;
+    --ink: #111111;
+    --ink-2: #555555;
+    --ink-3: #999999;
+    --line: #E6E6E6;
+    --primary: #111111;
+    --primary-fg: #FFFFFF;
+    --green: #2BB24C;
+    --green-soft: #E9F7EE;
+    --green-line: #A7E0B7;
+    --amber: #F08300;
+    --amber-soft: #FFF3E6;
+    --amber-line: #FBD1A0;
+    --red: #DC2626;
+    --red-soft: #FEF2F2;
+    --red-line: #FECACA;
+}
+
+.page-dark {
+    --bg: #000000;
+    --surface: #141414;
+    --surface-2: #1A1A1A;
+    --ink: #FFFFFF;
+    --ink-2: #C9CDD4;
+    --ink-3: #8A8F99;
+    --line: #2A2A2A;
+    --primary: #FAFAFA;
+    --primary-fg: #111111;
+    --green: #22C55E;
+    --green-soft: rgba(34, 197, 94, .12);
+    --green-line: rgba(34, 197, 94, .35);
+    --amber: #F59E0B;
+    --amber-soft: rgba(245, 158, 11, .10);
+    --amber-line: rgba(245, 158, 11, .30);
+    --red: #F87171;
+    --red-soft: rgba(239, 68, 68, .10);
+    --red-line: rgba(239, 68, 68, .30);
+}
+
+.page {
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding: 32rpx 28rpx 56rpx;
+    background: var(--bg);
+    color: var(--ink);
+}
+
+.card {
+    box-sizing: border-box;
+    padding: 32rpx;
+    border: 2rpx solid var(--line);
+    border-radius: 24rpx;
+    background: var(--surface);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--primary-fg);
+    font-size: 30rpx;
+    font-weight: 600;
+    border-radius: 14rpx;
+}
+
+.btn-ghost {
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 28rpx;
+    border-radius: 14rpx;
+}
+
+.btn-green {
+    background: var(--green);
+    color: #ffffff;
+    font-size: 30rpx;
+    font-weight: 600;
+    border-radius: 14rpx;
+}
+
+.muted {
+    color: var(--ink-3);
+}
+
+.eyebrow {
+    color: var(--green);
+    font-size: 22rpx;
+    font-weight: 600;
+    letter-spacing: 3rpx;
+}
+
+.section-title {
+    font-size: 32rpx;
+    font-weight: 700;
+}

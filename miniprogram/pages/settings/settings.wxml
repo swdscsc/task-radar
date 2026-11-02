@@ -1,0 +1,47 @@
+<view class="page {{dark ? 'page-dark' : 'page-light'}}">
+    <view class="hero">
+        <text class="title">设置</text>
+        <text class="subtitle">办事雷达 · TaskCard 小程序</text>
+    </view>
+
+    <view class="group">
+        <text class="group-title">外观</text>
+        <view class="opt-row">
+            <view
+                class="opt {{appearance === item.mode ? 'opt-active' : ''}}"
+                wx:for="{{appearanceOptions}}"
+                wx:key="mode"
+                data-mode="{{item.mode}}"
+                bindtap="setAppearance"
+            >
+                <text class="opt-label">{{item.label}}</text>
+                <text class="opt-check" wx:if="{{appearance === item.mode}}">✓</text>
+            </view>
+        </view>
+    </view>
+
+    <view class="group">
+        <text class="group-title">数据</text>
+        <view class="row">
+            <text class="row-label">已保存的卡</text>
+            <text class="row-value">{{cardCount}} 张</text>
+        </view>
+        <view class="row row-tap" bindtap="clearAll">
+            <text class="row-label danger">清空所有卡</text>
+            <text class="row-arrow">›</text>
+        </view>
+    </view>
+
+    <view class="group">
+        <text class="group-title">关于</text>
+        <view class="row">
+            <text class="row-label">版本</text>
+            <text class="row-value">1.0.0</text>
+        </view>
+        <view class="about">
+            <text class="about-text">· 解析与截图识别均使用免费接口，无需密钥、不开云服务。</text>
+            <text class="about-text">· 截图识别依赖微信自带 OCR，需在微信公众平台为小程序添加"微信OCR"插件（免费）。</text>
+            <text class="about-text">· 办事卡仅保存在本机，不会上传服务器。</text>
+        </view>
+    </view>
+</view>

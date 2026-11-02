@@ -1,0 +1,246 @@
+.hero {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28rpx;
+}
+
+.title {
+    font-size: 48rpx;
+    font-weight: 700;
+}
+
+.subtitle {
+    margin-top: 10rpx;
+    color: var(--ink-3);
+    font-size: 26rpx;
+    line-height: 1.6;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120rpx 40rpx;
+    text-align: center;
+}
+
+.empty-icon {
+    color: var(--ink-3);
+    font-size: 72rpx;
+}
+
+.empty-title {
+    margin-top: 20rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+}
+
+.empty-desc {
+    margin-top: 12rpx;
+    color: var(--ink-3);
+    font-size: 26rpx;
+    line-height: 1.6;
+}
+
+.card-item {
+    display: flex;
+    align-items: center;
+    padding: 28rpx;
+    margin-bottom: 18rpx;
+    border: 2rpx solid var(--line);
+    border-radius: 20rpx;
+    background: var(--surface);
+}
+
+.card-item-main {
+    flex: 1;
+}
+
+.card-item-title {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 600;
+}
+
+.card-item-meta {
+    display: block;
+    margin-top: 8rpx;
+    color: var(--ink-3);
+    font-size: 23rpx;
+}
+
+.card-item-deadline {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--amber);
+    font-size: 23rpx;
+}
+
+.card-item-arrow {
+    color: var(--ink-3);
+    font-size: 40rpx;
+}
+
+/* ===== 详情态 ===== */
+.result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22rpx;
+}
+
+.back-btn {
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 26rpx;
+}
+
+.result-cat {
+    padding: 8rpx 20rpx;
+    border-radius: 999rpx;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 24rpx;
+    font-weight: 600;
+}
+
+.card-title {
+    display: block;
+    font-size: 38rpx;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.card-summary {
+    display: block;
+    margin-top: 14rpx;
+    color: var(--ink-2);
+    font-size: 28rpx;
+    line-height: 1.6;
+}
+
+.block {
+    margin-top: 32rpx;
+}
+
+.block-title {
+    display: block;
+    margin-bottom: 16rpx;
+    font-size: 28rpx;
+    font-weight: 700;
+}
+
+.deadline {
+    display: flex;
+    align-items: center;
+    padding: 18rpx 22rpx;
+    border-radius: 14rpx;
+    background: var(--amber-soft);
+    border: 2rpx solid var(--amber-line);
+}
+
+.deadline.need-confirm {
+    background: var(--red-soft);
+    border-color: var(--red-line);
+}
+
+.deadline-text {
+    font-size: 30rpx;
+    font-weight: 600;
+}
+
+.badge {
+    margin-left: 14rpx;
+    padding: 4rpx 14rpx;
+    border-radius: 999rpx;
+    background: var(--red);
+    color: #fff;
+    font-size: 20rpx;
+}
+
+.badge.inline {
+    margin-left: 10rpx;
+}
+
+.item {
+    display: flex;
+    align-items: flex-start;
+    padding: 18rpx 0;
+    border-top: 2rpx solid var(--line);
+}
+
+.checkbox {
+    flex: none;
+    width: 40rpx;
+    height: 40rpx;
+    margin-right: 18rpx;
+    margin-top: 4rpx;
+    border: 2rpx solid var(--ink-3);
+    border-radius: 10rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 26rpx;
+}
+
+.checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+}
+
+.item-body {
+    flex: 1;
+}
+
+.item-text {
+    font-size: 28rpx;
+    line-height: 1.5;
+}
+
+.item-text.done {
+    color: var(--ink-3);
+    text-decoration: line-through;
+}
+
+.question {
+    padding: 14rpx 0;
+    border-top: 2rpx solid var(--line);
+}
+
+.q-text {
+    display: block;
+    font-size: 27rpx;
+    color: var(--amber);
+    font-weight: 600;
+}
+
+.q-reason {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--ink-3);
+    font-size: 23rpx;
+    line-height: 1.5;
+}
+
+.result-actions {
+    display: flex;
+    margin-top: 32rpx;
+}
+
+.act-btn {
+    flex: 1;
+    margin-right: 18rpx;
+    background: var(--green);
+    color: #fff;
+    font-size: 30rpx;
+    font-weight: 600;
+    border-radius: 14rpx;
+}
+
+.act-btn.del {
+    margin-right: 0;
+    background: var(--red-soft);
+    color: var(--red);
+}

@@ -1,0 +1,9 @@
+{
+  "desc": "办事雷达 · TaskCard 小程序站点地图",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

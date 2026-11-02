@@ -1,0 +1,371 @@
+.hero {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28rpx;
+}
+
+.title {
+    margin-top: 14rpx;
+    font-size: 48rpx;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.subtitle {
+    margin-top: 12rpx;
+    color: var(--ink-3);
+    font-size: 26rpx;
+    line-height: 1.6;
+}
+
+.composer {
+    margin-bottom: 24rpx;
+}
+
+.composer-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 28rpx;
+    font-weight: 600;
+}
+
+.composer-hint {
+    color: var(--ink-3);
+    font-size: 22rpx;
+    font-weight: 400;
+}
+
+.notice-input {
+    width: 100%;
+    min-height: 220rpx;
+    margin-top: 18rpx;
+    padding: 20rpx;
+    box-sizing: border-box;
+    border: 2rpx solid var(--line);
+    border-radius: 16rpx;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 28rpx;
+    line-height: 1.6;
+}
+
+.composer-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18rpx;
+}
+
+.counter {
+    color: var(--ink-3);
+    font-size: 24rpx;
+}
+
+.counter-num {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.composer-actions {
+    display: flex;
+}
+
+.mini-btn {
+    margin: 0 0 0 14rpx;
+    font-size: 26rpx;
+    background: var(--surface-2);
+    color: var(--ink-2);
+}
+
+.mini-green {
+    background: var(--green);
+    color: #fff;
+}
+
+.mini-primary {
+    background: var(--primary);
+    color: var(--primary-fg);
+}
+
+.error-box {
+    border-color: var(--red-line);
+    background: var(--red-soft);
+    margin-bottom: 24rpx;
+}
+
+.error-text {
+    color: var(--red);
+    font-size: 26rpx;
+}
+
+.samples {
+    margin-top: 8rpx;
+}
+
+.sample-grid {
+    display: flex;
+    margin-top: 18rpx;
+    flex-wrap: wrap;
+}
+
+.sample-item {
+    box-sizing: border-box;
+    width: 48%;
+    margin-right: 4%;
+    margin-bottom: 18rpx;
+    padding: 24rpx;
+    border: 2rpx solid var(--line);
+    border-radius: 18rpx;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+}
+
+.sample-item:nth-child(2n) {
+    margin-right: 0;
+}
+
+.sample-title {
+    font-size: 28rpx;
+    font-weight: 600;
+}
+
+.sample-desc {
+    margin-top: 8rpx;
+    color: var(--ink-3);
+    font-size: 22rpx;
+}
+
+/* ===== 结果态 ===== */
+.result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22rpx;
+}
+
+.back-btn {
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 26rpx;
+}
+
+.result-cat {
+    padding: 8rpx 20rpx;
+    border-radius: 999rpx;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 24rpx;
+    font-weight: 600;
+}
+
+.card-title {
+    display: block;
+    font-size: 38rpx;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.card-summary {
+    display: block;
+    margin-top: 14rpx;
+    color: var(--ink-2);
+    font-size: 28rpx;
+    line-height: 1.6;
+}
+
+.block {
+    margin-top: 32rpx;
+}
+
+.block-title {
+    display: block;
+    margin-bottom: 16rpx;
+    font-size: 28rpx;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.deadline {
+    display: flex;
+    align-items: center;
+    padding: 18rpx 22rpx;
+    border-radius: 14rpx;
+    background: var(--amber-soft);
+    border: 2rpx solid var(--amber-line);
+}
+
+.deadline.need-confirm {
+    background: var(--red-soft);
+    border-color: var(--red-line);
+}
+
+.deadline-text {
+    font-size: 30rpx;
+    font-weight: 600;
+}
+
+.badge {
+    margin-left: 14rpx;
+    padding: 4rpx 14rpx;
+    border-radius: 999rpx;
+    background: var(--red);
+    color: #fff;
+    font-size: 20rpx;
+}
+
+.badge.inline {
+    margin-left: 10rpx;
+    vertical-align: middle;
+}
+
+.item, .step {
+    display: flex;
+    align-items: flex-start;
+    padding: 18rpx 0;
+    border-top: 2rpx solid var(--line);
+}
+
+.step {
+    border-top: 2rpx dashed var(--line);
+}
+
+.checkbox {
+    flex: none;
+    width: 40rpx;
+    height: 40rpx;
+    margin-right: 18rpx;
+    margin-top: 4rpx;
+    border: 2rpx solid var(--ink-3);
+    border-radius: 10rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 26rpx;
+}
+
+.checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+}
+
+.item-body {
+    flex: 1;
+}
+
+.item-text {
+    font-size: 28rpx;
+    line-height: 1.5;
+}
+
+.item-text.done {
+    color: var(--ink-3);
+    text-decoration: line-through;
+}
+
+.step-num {
+    flex: none;
+    width: 40rpx;
+    height: 40rpx;
+    margin-right: 18rpx;
+    margin-top: 2rpx;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quote {
+    display: block;
+    margin-top: 8rpx;
+    color: var(--ink-3);
+    font-size: 22rpx;
+    line-height: 1.5;
+}
+
+.question {
+    padding: 14rpx 0;
+    border-top: 2rpx solid var(--line);
+}
+
+.q-text {
+    display: block;
+    font-size: 27rpx;
+    color: var(--amber);
+    font-weight: 600;
+}
+
+.q-reason {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--ink-3);
+    font-size: 23rpx;
+    line-height: 1.5;
+}
+
+.result-actions {
+    display: flex;
+    margin-top: 32rpx;
+}
+
+.act-btn {
+    flex: 1;
+    margin-right: 18rpx;
+    background: var(--green);
+    color: #fff;
+    font-size: 30rpx;
+    font-weight: 600;
+    border-radius: 14rpx;
+}
+
+.act-btn.ghost {
+    margin-right: 0;
+    background: var(--surface-2);
+    color: var(--ink-2);
+}
+
+.act-btn.disabled {
+    background: var(--surface-2);
+    color: var(--ink-3);
+}
+
+/* ===== 示例卡 ===== */
+.sample-desc {
+    margin-top: 8rpx;
+    color: var(--ink-3);
+    font-size: 22rpx;
+    line-height: 1.5;
+}
+
+.sample-btns {
+    display: flex;
+    margin-top: 18rpx;
+}
+
+.sample-btn {
+    margin: 0 14rpx 0 0;
+    font-size: 24rpx;
+    background: var(--primary);
+    color: var(--primary-fg);
+}
+
+.sample-btn-ghost {
+    background: var(--surface-2);
+    color: var(--ink-2);
+}
+
+.sample-banner {
+    margin-bottom: 18rpx;
+    padding: 16rpx 22rpx;
+    border-radius: 14rpx;
+    background: var(--green-soft);
+    border: 2rpx solid var(--green-line);
+    color: var(--green);
+    font-size: 24rpx;
+    line-height: 1.5;
+}

@@ -1,0 +1,97 @@
+<view class="page {{dark ? 'page-dark' : 'page-light'}}">
+
+    <!-- ============ 列表态 ============ -->
+    <block wx:if="{{viewState === 'list'}}">
+        <view class="hero">
+            <text class="title">我的卡</text>
+            <text class="subtitle">本地保存的办事卡，仅存于本机，不会上传。</text>
+        </view>
+
+        <view class="empty" wx:if="{{cards.length === 0}}">
+            <text class="empty-icon">○</text>
+            <text class="empty-title">还没有保存的卡</text>
+            <text class="empty-desc">在「解析」里生成办事卡后，点"保存到我的卡"即可。</text>
+        </view>
+
+        <view class="card-item" wx:for="{{cards}}" wx:key="id" data-id="{{item.id}}" bindtap="openCard">
+            <view class="card-item-main">
+                <text class="card-item-title">{{item.title}}</text>
+                <text class="card-item-meta">{{item.category}} · {{item.taskCount}} 项待办 · {{item.createdText}}</text>
+                <text class="card-item-deadline" wx:if="{{item.deadline}}">截止：{{item.deadline}}</text>
+            </view>
+            <text class="card-item-arrow">›</text>
+        </view>
+    </block>
+
+    <!-- ============ 详情态 ============ -->
+    <block wx:else>
+        <view class="result-head">
+            <button class="back-btn" size="mini" bindtap="backToList">← 返回</button>
+            <text class="result-cat">{{card.category || '其他'}}</text>
+        </view>
+
+        <view class="card">
+            <text class="card-title">{{card.title}}</text>
+            <text class="card-summary" wx:if="{{card.summary}}">{{card.summary}}</text>
+
+            <view class="block" wx:if="{{card.deadline && card.deadline.original_text}}">
+                <text class="block-title">截止时间</text>
+                <view class="deadline {{card.deadline.needs_confirmation ? 'need-confirm' : ''}}">
+                    <text class="deadline-text">{{card.deadline.normalized_date ? card.deadline.normalized_date : card.deadline.original_text}}</text>
+                    <text class="badge" wx:if="{{card.deadline.needs_confirmation}}">需确认</text>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.tasks.length > 0}}">
+                <text class="block-title">待办事项</text>
+                <view class="item" wx:for="{{card.tasks}}" wx:key="id" data-index="{{index}}" bindtap="toggleTask">
+                    <view class="checkbox {{item.completed ? 'checked' : ''}}">
+                        <text wx:if="{{item.completed}}">✓</text>
+                    </view>
+                    <view class="item-body">
+                        <text class="item-text {{item.completed ? 'done' : ''}}">{{item.title}}</text>
+                        <text class="badge inline" wx:if="{{item.needs_confirmation}}">需确认</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.materials.length > 0}}">
+                <text class="block-title">需要材料</text>
+                <view class="item" wx:for="{{card.materials}}" wx:key="id" data-index="{{index}}" bindtap="toggleMaterial">
+                    <view class="checkbox {{item.completed ? 'checked' : ''}}">
+                        <text wx:if="{{item.completed}}">✓</text>
+                    </view>
+                    <view class="item-body">
+                        <text class="item-text {{item.completed ? 'done' : ''}}">{{item.name}}</text>
+                        <text class="badge inline" wx:if="{{item.needs_confirmation}}">需确认</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.steps.length > 0}}">
+                <text class="block-title">办理步骤</text>
+                <view class="step" wx:for="{{card.steps}}" wx:key="id">
+                    <text class="step-num">{{index + 1}}</text>
+                    <view class="item-body">
+                        <text class="item-text">{{item.text}}</text>
+                        <text class="quote" wx:if="{{item.source_quote}}">依据：{{item.source_quote}}</text>
+                    </view>
+                </view>
+            </view>
+
+            <view class="block" wx:if="{{card.questions_to_confirm.length > 0}}">
+                <text class="block-title">需要你确认</text>
+                <view class="question" wx:for="{{card.questions_to_confirm}}" wx:key="id">
+                    <text class="q-text">• {{item.question}}</text>
+                    <text class="q-reason" wx:if="{{item.reason}}">{{item.reason}}</text>
+                </view>
+            </view>
+        </view>
+
+        <view class="result-actions">
+            <button class="act-btn" bindtap="copyCard">复制文本</button>
+            <button class="act-btn del" bindtap="deleteCard">删除</button>
+        </view>
+    </block>
+
+</view>
