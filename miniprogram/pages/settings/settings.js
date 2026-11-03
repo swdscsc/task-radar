@@ -1,4 +1,5 @@
 const store = require('../../utils/store.js');
+const cloud = require('../../utils/cloud.js');
 
 Page({
     data: {
@@ -9,7 +10,10 @@ Page({
             { mode: 'light', label: '浅色' },
             { mode: 'dark', label: '深色' }
         ],
-        cardCount: 0
+        cardCount: 0,
+        loggedIn: false,
+        accountName: '',
+        cloudMode: 'checking'
     },
 
     onShow: function () {
@@ -17,6 +21,29 @@ Page({
         try { mode = wx.getStorageSync('taskcard.appearance') || 'system'; } catch (e) {}
         this.setData({ appearance: mode, cardCount: store.getCards().length });
         this.applyAppearance(mode);
+        this.syncAccount();
+    },
+
+    onLoad: function () {
+        const that = this;
+        cloud.onAuthChange(function (m, u) {
+            that.setData({
+                cloudMode: m,
+                loggedIn: m === 'cloud',
+                accountName: (u && (u.name || u.nickname)) || ''
+            });
+        });
+    },
+
+    syncAccount: function () {
+        const that = this;
+        cloud.checkAuth().then(function (r) {
+            that.setData({
+                cloudMode: r.mode,
+                loggedIn: r.mode === 'cloud',
+                accountName: (r.user && (r.user.name || r.user.nickname)) || ''
+            });
+        });
     },
 
     applyAppearance: function (mode) {
@@ -36,6 +63,34 @@ Page({
         this.setData({ appearance: mode });
         this.applyAppearance(mode);
         wx.showToast({ title: '已设置', icon: 'success' });
+    },
+
+    onLogin: function () {
+        const that = this;
+        wx.showLoading({ title: '登录中' });
+        cloud.signIn().then(function () {
+            wx.hideLoading();
+        }).catch(function (err) {
+            wx.hideLoading();
+            console.error('login failed', err);
+            wx.showToast({ title: '登录失败，请重试', icon: 'none' });
+        });
+    },
+
+    onLogout: function () {
+        const that = this;
+        wx.showModal({
+            title: '退出登录',
+            content: '退出后仅保留本机数据，云端数据仍在你的账号下。',
+            success: function (r) {
+                if (r.confirm) {
+                    cloud.signOut().then(function () {
+                        that.setData({ loggedIn: false, accountName: '' });
+                        wx.showToast({ title: '已退出', icon: 'success' });
+                    });
+                }
+            }
+        });
     },
 
     clearAll: function () {

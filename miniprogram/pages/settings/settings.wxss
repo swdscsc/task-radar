@@ -90,6 +90,11 @@
     color: var(--red);
 }
 
+.row-label.accent {
+    color: var(--green);
+    font-weight: 600;
+}
+
 .row-value {
     color: var(--ink-3);
 }

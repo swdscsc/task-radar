@@ -21,6 +21,22 @@
     </view>
 
     <view class="group">
+        <text class="group-title">账号</text>
+        <view class="row" wx:if="{{loggedIn}}">
+            <text class="row-label">已登录</text>
+            <text class="row-value">{{accountName}}</text>
+        </view>
+        <view class="row row-tap" bindtap="onLogin" wx:if="{{!loggedIn}}">
+            <text class="row-label accent">登录 WorkBuddy 账号</text>
+            <text class="row-arrow">›</text>
+        </view>
+        <view class="row row-tap" bindtap="onLogout" wx:if="{{loggedIn}}">
+            <text class="row-label danger">退出登录</text>
+            <text class="row-arrow">›</text>
+        </view>
+    </view>
+
+    <view class="group">
         <text class="group-title">数据</text>
         <view class="row">
             <text class="row-label">已保存的卡</text>
@@ -41,7 +57,7 @@
         <view class="about">
             <text class="about-text">· 解析与截图识别均使用免费接口，无需密钥、不开云服务。</text>
             <text class="about-text">· 截图识别依赖微信自带 OCR，需在微信公众平台为小程序添加"微信OCR"插件（免费）。</text>
-            <text class="about-text">· 办事卡仅保存在本机，不会上传服务器。</text>
+            <text class="about-text">· 登录 WorkBuddy 账号后，办事卡会同步到云端，可在网页版与手机端共享同一份数据。</text>
         </view>
     </view>
 </view>

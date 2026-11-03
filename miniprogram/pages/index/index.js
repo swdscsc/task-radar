@@ -1,6 +1,6 @@
 const api = require('../../utils/api.js');
 const ocr = require('../../utils/ocr.js');
-const store = require('../../utils/store.js');
+const cloud = require('../../utils/cloud.js');
 
 const SAMPLES = require('../../utils/samples.js');
 
@@ -145,7 +145,9 @@ Page({
     persistIfSaved: function () {
         const id = this.data.savedId;
         if (!id) return;
-        store.updateCard(id, this.data.card);
+        cloud.updateCard(id, this.data.card).catch(function (e) {
+            console.error('updateCard failed', e);
+        });
     },
 
     saveCard: function () {
@@ -155,9 +157,19 @@ Page({
         }
         const card = this.data.card;
         if (!card) return;
-        const item = store.saveCard(card);
-        this.setData({ savedId: item.id });
-        wx.showToast({ title: '已保存到我的卡', icon: 'success' });
+        wx.showLoading({ title: '保存中' });
+        cloud.saveCard({ cardJson: card }).then(function (item) {
+            wx.hideLoading();
+            this.setData({ savedId: item.id });
+            wx.showToast({
+                title: cloud.getMode() === 'cloud' ? '已存云端' : '已存本地',
+                icon: 'success'
+            });
+        }.bind(this)).catch(function (err) {
+            wx.hideLoading();
+            console.error('saveCard failed', err);
+            wx.showToast({ title: '保存失败', icon: 'none' });
+        });
     },
 
     buildPlainText: function (card) {

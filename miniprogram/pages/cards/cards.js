@@ -1,4 +1,4 @@
-const store = require('../../utils/store.js');
+const cloud = require('../../utils/cloud.js');
 
 function buildPlainText(card) {
     const lines = [];
@@ -77,22 +77,29 @@ Page({
     },
 
     refresh: function () {
-        const cards = store.getCards().map(function (c) {
-            return {
-                id: c.id,
-                title: c.card.title || '未命名办事卡',
-                category: c.card.category || '其他',
-                createdText: fmtDate(c.createdAt),
-                deadline: (c.card.deadline && c.card.deadline.original_text) || '',
-                taskCount: (c.card.tasks || []).length
-            };
+        const that = this;
+        cloud.listCards().then(function (rows) {
+            const cards = rows.map(function (c) {
+                return {
+                    id: c.id,
+                    title: c.title || '未命名办事卡',
+                    category: c.category || '其他',
+                    createdText: fmtDate(c.createdAt),
+                    deadline: c.deadlineText || (c.card && c.card.deadline && c.card.deadline.original_text) || '',
+                    taskCount: (c.card && c.card.tasks || []).length,
+                    __local: c.__local
+                };
+            });
+            that.setData({ cards: cards });
+        }).catch(function (err) {
+            console.error('listCards failed', err);
+            that.setData({ cards: [] });
         });
-        this.setData({ cards: cards });
     },
 
     openCard: function (e) {
         const id = e.currentTarget.dataset.id;
-        const all = store.getCards();
+        const all = this.data.cards;
         const found = all.filter(function (c) { return c.id === id; })[0];
         if (!found) return;
         this.setData({ viewState: 'detail', card: found.card, selectedId: id });
@@ -104,7 +111,9 @@ Page({
         if (!card || !card.tasks[i]) return;
         const key = 'card.tasks[' + i + '].completed';
         this.setData({ [key]: !card.tasks[i].completed });
-        store.updateCard(this.data.selectedId, this.data.card);
+        cloud.updateCard(this.data.selectedId, this.data.card).catch(function (err) {
+            console.error('updateCard failed', err);
+        });
     },
 
     toggleMaterial: function (e) {
@@ -113,7 +122,9 @@ Page({
         if (!card || !card.materials[i]) return;
         const key = 'card.materials[' + i + '].completed';
         this.setData({ [key]: !card.materials[i].completed });
-        store.updateCard(this.data.selectedId, this.data.card);
+        cloud.updateCard(this.data.selectedId, this.data.card).catch(function (err) {
+            console.error('updateCard failed', err);
+        });
     },
 
     copyCard: function () {
@@ -134,10 +145,14 @@ Page({
             confirmColor: '#DC2626',
             success: function (r) {
                 if (r.confirm) {
-                    store.removeCard(id);
-                    that.setData({ viewState: 'list', card: null, selectedId: null });
-                    that.refresh();
-                    wx.showToast({ title: '已删除', icon: 'success' });
+                    cloud.removeCard(id).then(function () {
+                        that.setData({ viewState: 'list', card: null, selectedId: null });
+                        that.refresh();
+                        wx.showToast({ title: '已删除', icon: 'success' });
+                    }).catch(function (err) {
+                        console.error('removeCard failed', err);
+                        wx.showToast({ title: '删除失败', icon: 'none' });
+                    });
                 }
             }
         });
