@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>办事雷达 · TaskCard</title>
+<meta name="description" content="重要消息自动捕捉,待办事项清晰整理,关键截止时间及时提醒。把学校通知、物业公告、报名要求、退款说明变成一张可勾选的办事卡。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='2.5' width='24' height='27' rx='5' fill='%231E7A63'/%3E%3Cpath d='M10 11h12M10 16.5h8' stroke='%23FFFFFF' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M15.5 23.5l2.2 2.2 4-4.4' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#1E7A63" />
+<link rel="manifest" href="manifest.json" />
+<script>
+/* 外观在 CSS 生效前应用，避免深色用户看到闪白 */
+(function () {
+  try {
+    var a = localStorage.getItem('taskcard.appearance') || 'system';
+    var dark = a === 'dark' || (a === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('dark');
+  } catch (e) { }
+})();
+</script>
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============ 顶部栏 ============ -->
+  <header class="topbar no-print">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+            <rect x="5" y="3.5" width="22" height="25" rx="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 11.5h12M10 17h8M10 22.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M21.5 21.2l1.6 1.6 3.1-3.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>办事雷达</strong>
+          <em>TaskCard</em>
+        </span>
+      </div>
+      <nav class="topbar-nav" id="topbarNav">
+        <button type="button" class="nav-btn is-active" id="navInputBtn" data-nav="input">解析</button>
+        <button type="button" class="nav-btn" id="navInboxBtn" data-nav="inbox">收件箱<span class="nav-badge" id="inboxBadge" hidden></span></button>
+        <button type="button" class="nav-btn" id="navTasksBtn" data-nav="tasks">我的任务<span class="nav-badge" id="tasksBadge" hidden></span></button>
+        <button type="button" class="nav-btn" id="navConnBtn" data-nav="connections">连接中心</button>
+        <button type="button" class="nav-btn" id="navSettingsBtn" data-nav="settings">设置</button>
+        <button type="button" class="nav-btn" id="navSavedBtn">我的卡</button>
+        <button type="button" class="nav-btn" id="navRemindBtn">提醒</button>
+        <span class="nav-account" id="accountBadge" hidden></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ============ 视图 A：通知输入 ============ -->
+    <section class="view" id="viewInput">
+      <div class="intro">
+        <h1 class="intro-title">长通知，变成一张<strong>办事卡</strong></h1>
+        <p class="intro-sub">
+          粘贴一段学校通知、物业公告、报名要求或退款说明，AI 会替你抽出截止时间、要办的每一步、
+          需要带的材料和仍需核实的问题——每一项都附带原文依据，可以逐条核对。
+        </p>
+      </div>
+
+      <!-- 输入卡片 -->
+      <div class="composer">
+        <label class="composer-label" for="noticeInput">
+          把通知原文粘到这里
+          <span class="composer-hint">支持粘贴长文本，最多 5000 字</span>
+        </label>
+        <textarea
+          id="noticeInput"
+          class="notice-input"
+          maxlength="20000"
+          placeholder="例如：&#10;&#10;【XX大学创新创业训练计划项目申报通知】&#10;各学院同学：2026届本科生创新创业训练计划项目申报工作现已开始，申报截止时间为2026年11月20日17:00前……"
+          spellcheck="false"
+        ></textarea>
+        <div class="composer-foot">
+          <div class="counter" id="charCounter" aria-live="polite">
+            <span id="charCount">0</span><span class="counter-sep">/</span><span class="counter-max">5000</span>
+          </div>
+          <div class="composer-actions">
+            <button type="button" class="btn btn-ghost" id="clearBtn">清空内容</button>
+            <button type="button" class="btn btn-ghost" id="ocrBtn">
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label">截图识别</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="submitBtn">
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label">生成办事卡</span>
+            </button>
+          </div>
+        </div>
+        <input type="file" id="ocrInput" accept="image/*" hidden />
+        <p class="field-error" id="inputError" role="alert" hidden></p>
+        <div class="input-error-actions" id="inputErrorActions" hidden>
+          <button type="button" class="btn btn-ghost btn-sm" id="retryBtn">重试解析</button>
+          <span class="input-error-hint">你的通知原文已完整保留在上面的输入框里</span>
+        </div>
+      </div>
+
+      <!-- 示例 -->
+      <div class="samples">
+        <h2 class="section-eyebrow">没有现成的通知？先试试示例</h2>
+        <div class="sample-grid" id="sampleGrid"></div>
+      </div>
+
+      <!-- 手动模式 -->
+      <details class="manual" id="manualPanel">
+        <summary class="manual-summary">
+          <span class="manual-summary-title">模型暂时不可用？改用手动整理</span>
+          <span class="manual-summary-note">自己填写事项，同样能生成可勾选的办事卡</span>
+        </summary>
+        <div class="manual-body">
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">事项标题</span>
+              <input type="text" id="manualTitle" class="text-input" placeholder="例如：XX大学大创项目申报" />
+            </label>
+            <label class="field field-narrow">
+              <span class="field-label">类型</span>
+              <select id="manualCategory" class="text-input">
+                <option value="其他">其他</option>
+                <option value="报名">报名</option>
+                <option value="物业">物业</option>
+                <option value="退款">退款</option>
+                <option value="预约">预约</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">一句话摘要</span>
+            <input type="text" id="manualSummary" class="text-input" placeholder="这件事大概要做什么" />
+          </label>
+          <label class="field">
+            <span class="field-label">截止时间（照抄原文，不要自己推断）</span>
+            <input type="text" id="manualDeadline" class="text-input" placeholder="例如：2026年11月20日17:00前" />
+          </label>
+          <label class="field">
+            <span class="field-label">待办事项（每行一条）</span>
+            <textarea id="manualTasks" class="text-input text-area" rows="4" placeholder="提交申报表&#10;上传成绩单扫描件"></textarea>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">所需材料（每行一条）</span>
+              <textarea id="manualMaterials" class="text-input text-area" rows="3" placeholder="身份证明复印件"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">办理步骤（每行一条）</span>
+              <textarea id="manualSteps" class="text-input text-area" rows="3" placeholder="在教务系统提交"></textarea>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">待确认事项（每行一条）</span>
+            <textarea id="manualQuestions" class="text-input text-area" rows="3" placeholder="提交地点在哪里？"></textarea>
+          </label>
+          <div class="manual-foot">
+            <button type="button" class="btn btn-primary" id="manualSubmitBtn">生成办事卡</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- 隐私提示 -->
+      <aside class="privacy">
+        <h2 class="privacy-title">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true">
+            <path d="M10 2.2l6.4 2.4v4.2c0 3.9-2.6 7.3-6.4 9-3.8-1.7-6.4-5.1-6.4-9V4.6L10 2.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M7.3 9.9l1.9 1.9 3.5-3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          隐私说明
+        </h2>
+        <ul class="privacy-list">
+          <li>请不要输入身份证号、电话号码、密码等不必要的敏感信息。</li>
+          <li>提交文本会发送给模型服务用于解析，请自行判断内容是否适合外发。</li>
+          <li>默认<b>不会保存</b>你的通知原文；只有你主动点击「保存到本设备」时，才会写入当前浏览器。</li>
+          <li>解析结果请在正式办理前与原文核对。</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- ============ 视图 B：办事卡 ============ -->
+    <section class="view" id="viewResult" hidden>
+
+      <div class="result-bar no-print">
+        <button type="button" class="btn btn-ghost" id="backBtn">← 返回输入</button>
+        <div class="result-bar-actions">
+          <button type="button" class="btn btn-ghost" id="copyBtn">复制办事卡</button>
+          <button type="button" class="btn btn-ghost" id="printBtn">打印 / 保存 PDF</button>
+          <button type="button" class="btn btn-ghost" id="saveLocalBtn">保存到云端</button>
+          <button type="button" class="btn btn-ghost" id="reminderBtn" hidden>设置提醒</button>
+          <button type="button" class="btn btn-ghost" id="addToTasksBtn" hidden>加入我的任务</button>
+          <button type="button" class="btn btn-primary btn-sm" id="restartBtn">重新整理另一条通知</button>
+        </div>
+      </div>
+
+      <div class="radar-card-actions no-print" id="radarCardActions" hidden>
+        <span class="radar-card-actions-label" id="radarCardStateLabel"></span>
+        <div class="radar-card-actions-btns">
+          <button type="button" class="btn btn-primary btn-sm" id="radarConfirmBtn" hidden>确认无误,开始办理</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="radarDoneBtn" hidden>标记完成</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="radarReopenBtn" hidden>重新打开</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="radarIgnoreBtn" hidden>忽略</button>
+        </div>
+      </div>
+
+      <div class="sample-banner" id="sampleBanner" hidden>
+        <span class="sample-banner-tag">示例预览</span>
+        <span class="sample-banner-text">
+          这是内置演示结果，<b>并非实时 AI 解析</b>。点击「返回输入」后，用你自己的通知生成即可看到真实解析。
+        </span>
+      </div>
+
+      <div class="print-head" id="printHead">
+        办事雷达 · TaskCard　|　办事卡　|　生成于 <span id="printTime"></span>
+      </div>
+
+      <article class="card" id="card">
+
+        <!-- A. 顶部 -->
+        <header class="card-head">
+          <div class="card-head-top">
+            <span class="chip chip-category" id="cardCategory">其他</span>
+            <span class="card-source chip" id="cardSource" hidden></span>
+            <span class="card-created" id="cardCreated"></span>
+          </div>
+          <h1 class="card-title" id="cardTitle"></h1>
+          <p class="card-summary" id="cardSummary"></p>
+        </header>
+
+        <!-- B. 截止时间 -->
+        <section class="block block-deadline" id="blockDeadline">
+          <h2 class="block-title">截止时间</h2>
+          <div class="deadline-body" id="deadlineBody"></div>
+        </section>
+
+        <!-- C. 任务清单 -->
+        <section class="block block-tasks" id="blockTasks">
+          <div class="block-head">
+            <h2 class="block-title">要办的事</h2>
+            <span class="block-count" id="taskCount"></span>
+          </div>
+          <div class="progress" id="progressWrap">
+            <span class="progress-label">完成进度</span>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span class="progress-text" id="progressText"></span>
+          </div>
+          <ul class="task-list" id="taskList"></ul>
+          <button type="button" class="add-btn" id="addTaskBtn">
+            <span aria-hidden="true">＋</span> 添加一条待办
+          </button>
+        </section>
+
+        <!-- D. 所需材料 -->
+        <section class="block block-materials" id="blockMaterials">
+          <div class="block-head">
+            <h2 class="block-title">要带的材料</h2>
+            <span class="block-count" id="materialCount"></span>
+          </div>
+          <ul class="material-list" id="materialList"></ul>
+        </section>
+
+        <!-- E. 办理步骤 -->
+        <section class="block block-steps" id="blockSteps">
+          <h2 class="block-title">办理步骤</h2>
+          <ol class="step-list" id="stepList"></ol>
+        </section>
+
+        <!-- G. 待确认事项 -->
+        <section class="block block-questions" id="blockQuestions">
+          <h2 class="block-title">需要核实的地方</h2>
+          <ul class="question-list" id="questionList"></ul>
+        </section>
+
+        <!-- F. 原文依据 -->
+        <section class="block block-evidence" id="blockEvidence">
+          <button type="button" class="evidence-toggle" id="evidenceToggle" aria-expanded="false" aria-controls="evidenceBody">
+            <span class="evidence-toggle-label">原文依据</span>
+            <span class="evidence-toggle-meta" id="evidenceMeta"></span>
+            <svg class="evidence-caret" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+              <path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="evidence-body" id="evidenceBody" hidden></div>
+        </section>
+
+      </article>
+
+      <div class="result-foot no-print">
+        <p class="result-foot-note">
+          解析结果仅供参考，正式办理前请以官方原文和现场要求为准。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 视图 C：消息收件箱 ============ -->
+    <section class="view" id="viewInbox" hidden>
+      <div class="stats-bar" id="statsBarInbox">
+        <button type="button" class="stat-pill" data-stat-tab="today">
+          <span class="stat-num" id="statTodayInbox">0</span><span class="stat-label">今日截止</span>
+        </button>
+        <button type="button" class="stat-pill" data-stat-tab="soon">
+          <span class="stat-num" id="statSoonInbox">0</span><span class="stat-label">即将截止</span>
+        </button>
+        <button type="button" class="stat-pill" data-stat-tab="pending">
+          <span class="stat-num" id="statPendingInbox">0</span><span class="stat-label">待确认</span>
+        </button>
+      </div>
+
+      <div class="intro intro-compact">
+        <h1 class="intro-title">消息<strong>收件箱</strong></h1>
+        <p class="intro-sub" id="inboxIntro">
+          把需要办理的消息粘贴或捕捉进来，AI 自动提取行动事项和截止时间，生成办事卡并按可靠程度分类。
+        </p>
+      </div>
+
+      <div class="pause-banner" id="pauseBanner" hidden>
+        自动捕捉已暂停：新消息只会记录，不会自动解析。你仍可以逐条点击「解析」手动处理。
+      </div>
+
+      <!-- 导入卡片 -->
+      <div class="composer">
+        <label class="composer-label" for="msgInput">
+          粘贴或转发需要处理的消息
+          <span class="composer-hint">最多 5000 字</span>
+        </label>
+        <textarea
+          id="msgInput"
+          class="notice-input"
+          maxlength="20000"
+          placeholder="例如：&#10;&#10;【培训中心】你报名的职业技能培训班将于2026年11月15日开班，请于11月10日前携带身份证复印件到培训中心二楼完成现场确认。"
+          spellcheck="false"
+        ></textarea>
+        <div class="composer-foot">
+          <div class="counter" aria-live="polite">
+            <span id="msgCharCount">0</span><span class="counter-sep">/</span><span class="counter-max">5000</span>
+          </div>
+          <div class="composer-actions">
+            <button type="button" class="btn btn-ghost" id="captureClipboardBtn">捕捉剪贴板</button>
+            <button type="button" class="btn btn-primary" id="importBtn">
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label">导入收件箱</span>
+            </button>
+          </div>
+        </div>
+        <p class="field-error" id="msgError" role="alert" hidden></p>
+      </div>
+
+      <!-- 消息列表 -->
+      <div class="section-head">
+        <h2 class="section-eyebrow">收到的消息</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="clearMsgsBtn">清理记录</button>
+      </div>
+      <div class="filter-row" id="msgFilterRow">
+        <button type="button" class="filter-chip is-active" data-filter="全部">全部</button>
+        <button type="button" class="filter-chip" data-filter="待处理">待处理</button>
+        <button type="button" class="filter-chip" data-filter="需确认">需确认</button>
+        <button type="button" class="filter-chip" data-filter="已生成">已生成</button>
+        <button type="button" class="filter-chip" data-filter="已忽略">已忽略</button>
+        <button type="button" class="filter-chip" data-filter="解析失败">失败</button>
+      </div>
+      <div class="msg-list" id="msgList"></div>
+    </section>
+
+    <!-- ============ 视图 D：我的任务 ============ -->
+    <section class="view" id="viewTasks" hidden>
+      <div class="stats-bar" id="statsBarTasks">
+        <button type="button" class="stat-pill" data-stat-tab="today">
+          <span class="stat-num" id="statTodayTasks">0</span><span class="stat-label">今日截止</span>
+        </button>
+        <button type="button" class="stat-pill" data-stat-tab="soon">
+          <span class="stat-num" id="statSoonTasks">0</span><span class="stat-label">即将截止</span>
+        </button>
+        <button type="button" class="stat-pill" data-stat-tab="pending">
+          <span class="stat-num" id="statPendingTasks">0</span><span class="stat-label">待确认</span>
+        </button>
+      </div>
+
+      <div class="intro intro-compact">
+        <h1 class="intro-title">我的<strong>任务</strong></h1>
+        <p class="intro-sub">
+          今日、明日、待确认、即将截止——所有数字都由你当前的真实任务动态计算。
+        </p>
+      </div>
+
+      <div class="tab-row" id="taskTabs" role="tablist">
+        <button type="button" class="tab-btn is-active" data-tab="today" role="tab">今日</button>
+        <button type="button" class="tab-btn" data-tab="tomorrow" role="tab">明日</button>
+        <button type="button" class="tab-btn" data-tab="pending" role="tab">待确认</button>
+        <button type="button" class="tab-btn" data-tab="soon" role="tab">即将截止</button>
+        <button type="button" class="tab-btn" data-tab="all" role="tab">全部</button>
+      </div>
+      <p class="bucket-note" id="bucketNote"></p>
+      <div class="radar-task-list" id="radarTaskList"></div>
+    </section>
+
+    <!-- ============ 视图 E：连接中心 ============ -->
+    <section class="view" id="viewConnections" hidden>
+      <div class="intro intro-compact">
+        <h1 class="intro-title">连接<strong>中心</strong></h1>
+        <p class="intro-sub">
+          这里展示每一个消息来源的真实连接状态与已验证的数据权限，不使用虚构的「已连接」徽标。
+          平台侧能力边界会如实标注。
+        </p>
+      </div>
+      <div class="conn-list" id="connList"></div>
+      <aside class="privacy">
+        <h2 class="privacy-title">能力边界说明（2026-10 核查结论）</h2>
+        <ul class="privacy-list">
+          <li>当前 WorkBuddy 环境没有个人微信助理集成，也不存在官方的全量聊天读取入口。</li>
+          <li>网页应用无法直接访问企业微信等连接器的数据；连接器能力目前只能在 WorkBuddy 对话侧使用。</li>
+          <li>静态网页没有后台运行环境，无法监听新消息事件，也没有服务端推送通道。</li>
+          <li>因此本应用的「自动捕捉」指：打开页面后对你主动导入的消息自动解析整理；平台消息监听在当前环境不可用。</li>
+          <li>本应用不会抓取任何未授权的聊天数据库，不会采集账号密码，不会绕过平台权限。</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- ============ 视图 F：设置 ============ -->
+    <section class="view" id="viewSettings" hidden>
+      <div class="intro intro-compact">
+        <h1 class="intro-title">捕捉与<strong>提醒</strong>设置</h1>
+        <p class="intro-sub">所有设置仅保存在本设备浏览器中。</p>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">关于</h2>
+        <div class="setting-row">
+          <span class="setting-text">
+            <b>办事雷达 · TaskCard <span class="version-tag" id="aboutVersion"></span></b>
+            <small>重要消息自动捕捉，待办事项清晰整理，关键截止时间及时提醒。</small>
+          </span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-text"><b>线上地址</b><small id="aboutOnline"></small></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="aboutCopyLinkBtn">复制链接</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">外观</h2>
+        <label class="setting-row">
+          <span class="setting-text">
+            <b>主题</b>
+            <small>跟随系统 / 浅色 / 深色，仅保存在本设备。</small>
+          </span>
+          <select id="setAppearance" class="text-input setting-select">
+            <option value="system">跟随系统</option>
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">捕捉</h2>
+        <label class="setting-row">
+          <span class="setting-text">
+            <b>启用自动捕捉</b>
+            <small>导入消息后立即自动解析；关闭后消息只记录，等你手动处理。</small>
+          </span>
+          <input type="checkbox" id="setAutoCapture" />
+        </label>
+        <div class="setting-sub">
+          <span class="setting-sub-label">允许捕捉的来源</span>
+          <label class="check-inline"><input type="checkbox" id="setSrcManual" /> 手动粘贴</label>
+          <label class="check-inline"><input type="checkbox" id="setSrcClipboard" /> 剪贴板捕捉</label>
+          <label class="check-inline"><input type="checkbox" id="setSrcLink" /> 链接导入</label>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">生成规则</h2>
+        <label class="setting-row">
+          <span class="setting-text">
+            <b>高置信度自动生成办事卡</b>
+            <small>行动明确、依据充分、时间清晰的消息直接进入「我的任务」。</small>
+          </span>
+          <input type="checkbox" id="setAutoCreate" />
+        </label>
+        <label class="setting-row">
+          <span class="setting-text">
+            <b>审核模式</b>
+            <small>开启后，所有新事项一律先进入「待确认」，由你逐条确认。</small>
+          </span>
+          <input type="checkbox" id="setReviewAll" />
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">提醒</h2>
+        <div class="setting-note">
+          本应用是纯静态网页，没有服务端推送通道。可用的真实提醒方式：
+          浏览器通知（仅本页面打开时有效）、导出日历文件（由日历应用提醒）、复制提醒文案。
+        </div>
+        <label class="setting-row">
+          <span class="setting-text"><b>提前多久提醒</b><small>按截止日期提前量发送浏览器通知。</small></span>
+          <select id="setLead" class="text-input setting-select">
+            <option value="30">30 分钟</option>
+            <option value="180">3 小时</option>
+            <option value="1440">1 天</option>
+            <option value="2880">2 天</option>
+            <option value="10080">7 天</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span class="setting-text"><b>合并重复提醒</b><small>多条事项到期时合并为一条通知。</small></span>
+          <input type="checkbox" id="setMerge" />
+        </label>
+        <label class="setting-row">
+          <span class="setting-text"><b>静默时段</b><small>该时段内不发浏览器通知。</small></span>
+          <span class="setting-inline">
+            <input type="checkbox" id="setQuietOn" />
+            <input type="time" id="setQuietStart" class="text-input setting-time" />
+            <span class="setting-dash">–</span>
+            <input type="time" id="setQuietEnd" class="text-input setting-time" />
+          </span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-text"><b>每日摘要</b><small>每天固定时间用浏览器通知发送一条今日概览（仅页面打开时）。</small></span>
+          <span class="setting-inline">
+            <input type="checkbox" id="setDigestOn" />
+            <input type="time" id="setDigestTime" class="text-input setting-time" />
+          </span>
+        </label>
+        <div class="setting-row">
+          <span class="setting-text"><b>浏览器通知权限</b><small id="notifPermText">未申请</small></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="notifPermBtn">申请权限</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">提醒通道</h2>
+        <div class="setting-row">
+          <span class="setting-text">
+            <b>导出日历文件（.ics）</b>
+            <small>把有明确截止日期的任务导出，导入系统日历后由日历应用准时提醒。</small>
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" id="icsBtn">导出 .ics</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-text"><b>复制今日提醒文案</b><small>生成纯文本摘要，粘贴到任何聊天或笔记工具。</small></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="digestCopyBtn">复制摘要</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h2 class="settings-title">隐私与数据</h2>
+        <label class="setting-row">
+          <span class="setting-text">
+            <b>保留消息原文</b>
+            <small>关闭后，解析成功即清除原文，仅保留结构化结果与原文引用片段。</small>
+          </span>
+          <input type="checkbox" id="setKeepOriginal" />
+        </label>
+        <div class="setting-note">
+          登录后，办事卡与提醒会保存到<strong>云端</strong>（按账号隔离，手机/电脑通用，可跨设备同步）；未登录时仅保存在本设备浏览器（localStorage）。
+          解析时消息文本会发送给模型服务用于生成结构化结果。<span id="setDataSummary"></span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-text">
+            <b>备份到文件</b>
+            <small>导出全部消息、任务与设置为 JSON 文件，换设备或清浏览器数据前先备份。</small>
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" id="backupExportBtn">导出备份</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-text">
+            <b>从备份恢复</b>
+            <small>导入备份文件并与当前数据合并（相同 ID 的记录以备份为准）。</small>
+          </span>
+          <input type="file" id="backupImportFile" accept=".json,application/json" hidden />
+          <button type="button" class="btn btn-ghost btn-sm" id="backupImportBtn">选择备份文件</button>
+        </div>
+        <div class="setting-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="clearMsgsBtn2">清空消息记录</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="clearTasksBtn">删除全部任务</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="resetSettingsBtn">恢复默认设置</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-foot no-print">
+    <p>办事雷达 · TaskCard —— 重要消息自动捕捉,待办事项清晰整理,关键截止时间及时提醒。</p>
+  </footer>
+</div>
+
+<!-- ============ 已保存的卡 抽屉 ============ -->
+<div class="drawer-scrim" id="savedScrim" hidden></div>
+<aside class="drawer" id="savedDrawer" hidden aria-label="已保存的办事卡">
+  <div class="drawer-head">
+    <h2 class="drawer-title">已保存的卡</h2>
+    <button type="button" class="icon-btn" id="savedCloseBtn" aria-label="关闭">✕</button>
+  </div>
+  <p class="drawer-note" id="savedNote">仅保存在当前浏览器中，清除浏览器数据或换设备即丢失。</p>
+  <div class="drawer-body" id="savedList"></div>
+  <div class="drawer-foot" id="savedFoot"></div>
+</aside>
+
+<!-- ============ 登录遮罩 ============ -->
+<div class="login-overlay" id="loginOverlay" hidden>
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+          <rect x="5" y="3.5" width="22" height="25" rx="4" stroke="currentColor" stroke-width="2"/>
+          <path d="M10 11.5h12M10 17h8M10 22.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M21.5 21.2l1.6 1.6 3.1-3.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <strong>办事雷达</strong>
+    </div>
+    <h2 class="login-title">登录以同步你的办事卡</h2>
+    <p class="login-sub">登录后，你的办事卡与提醒会安全保存在云端，手机小程序和电脑网页实时互通，换设备也不丢失。</p>
+    <button type="button" class="btn btn-primary btn-block" id="overlayLoginBtn">使用 WorkBuddy 登录</button>
+    <button type="button" class="btn btn-ghost btn-block" id="overlaySkipBtn">暂不登录，仅本设备使用</button>
+    <p class="login-fine">仅本设备使用时，数据只存在当前浏览器，不会上传云端。</p>
+  </div>
+</div>
+
+<!-- ============ 提醒中心 抽屉 ============ -->
+<div class="drawer-scrim" id="reminderScrim" hidden></div>
+<aside class="drawer" id="reminderDrawer" hidden aria-label="提醒中心">
+  <div class="drawer-head">
+    <h2 class="drawer-title">提醒中心</h2>
+    <button type="button" class="icon-btn" id="reminderCloseBtn" aria-label="关闭">✕</button>
+  </div>
+  <p class="drawer-note" id="reminderNote">登录后可查看与设置跨设备提醒。</p>
+  <div class="drawer-body" id="reminderList"></div>
+  <div class="drawer-foot">
+    <button type="button" class="btn btn-ghost btn-sm" id="reminderTestBtn">发送测试通知</button>
+  </div>
+</aside>
+
+<!-- ============ 提示条 ============ -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="vendor/workbuddy-cloud-sdk.global.js"></script>
+<script src="assets/samples.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/account.js"></script>
+</body>
+</html>

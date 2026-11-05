@@ -43,23 +43,51 @@
 
   /* ---------------- 鉴权 ---------------- */
 
+  // 从完整地址栏里取参数，比 URL.search 更稳：
+  // 1) 不依赖 relay 是用 ? 还是 & 拼接（避免 sharecode 已带 ? 时把 code 拼成 ?code 导致解析失败）
+  // 2) sharecode 作为首个参数，遇到后续 ? 即截断，避免被后续参数污染
+  function extractParam(name, stopAtQuestion) {
+    var cls = stopAtQuestion ? '[^&#?]' : '[^&#]';
+    var re = new RegExp('[?&]' + name + '=(' + cls + '+)');
+    var m = re.exec(location.href);
+    if (!m) return null;
+    try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+  }
+
+  function cleanAddressBar() {
+    var sc = extractParam('sharecode', true) || 'N5KJMMD5OJ';
+    var base = location.origin + location.pathname + '?sharecode=' + sc;
+    try { history.replaceState(null, '', base); } catch (e) {}
+  }
+
   function handleCallback() {
-    var url;
-    try { url = new URL(location.href); } catch (e) { return Promise.resolve(false); }
-    if (!url.searchParams.has('code') && !url.searchParams.has('error')) return Promise.resolve(false);
-    var provider = url.searchParams.get('provider');
-    if (provider !== 'workbuddy' && provider !== 'wechat') return Promise.resolve(false);
-    return getCloud().auth.handleWorkBuddyCallback().then(function (res) {
-      if (res.error) { setMode('anon'); return true; }
+    var code = extractParam('code');
+    var err = extractParam('error');
+    if (!code && !err) return Promise.resolve(false);
+
+    // 重建一条干净、SDK 可解析的回调 URL（无论 relay 拼接方式如何都不会损坏）。
+    // workbuddy 登录的回调只需 code + state，且不能带 provider_id=custom-oauth。
+    var state = extractParam('state') || '';
+    var clean = location.origin + location.pathname +
+      '?code=' + encodeURIComponent(code || '') +
+      '&state=' + encodeURIComponent(state) +
+      '&provider=workbuddy';
+    if (err) clean += '&error=' + encodeURIComponent(err);
+
+    return getCloud().auth.handleWorkBuddyCallback(clean).then(function (res) {
+      if (res.error) { cleanAddressBar(); setMode('anon'); return true; }
       if (res.data) {
         session = res.data;
         user = (res.data && res.data.user) || null;
         setMode('cloud');
-        ['code', 'state', 'provider'].forEach(function (k) { url.searchParams.delete(k); });
-        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        cleanAddressBar();
       }
       return true;
-    }).catch(function () { setMode('anon'); return true; });
+    }).catch(function () {
+      cleanAddressBar();
+      setMode('anon');
+      return true;
+    });
   }
 
   function restore() {
@@ -77,7 +105,8 @@
 
   function signIn() {
     if (mode === 'nosdk') { toast('云后端未加载，请刷新重试'); return Promise.resolve(); }
-    var redirectTo = location.origin + location.search;
+    var sc = extractParam('sharecode', true) || 'N5KJMMD5OJ';
+    var redirectTo = location.origin + location.pathname + '?sharecode=' + sc;
     return getCloud().auth.signInWithOAuth({ provider: 'workbuddy', redirectTo: redirectTo }).then(function (res) {
       if (res.error) { toast('登录发起失败：' + res.error.message); return; }
       if (res.data && res.data.url) location.assign(res.data.url);
