@@ -170,7 +170,9 @@ b, strong { font-weight: 600; }
 }
 
 .topbar-inner {
-  max-width: var(--maxw);
+  /* 顶栏单独放宽：正文 --maxw(720px) 装不下「品牌 + TASKCARD 副标题 + 7 个导航按钮」，
+     原先品牌被 flex 压扁、文字溢出盖到导航上，造成与「解析/收件箱」重叠。 */
+  max-width: 1000px;
   margin: 0 auto;
   padding: 12px 20px;
   display: flex;
@@ -179,9 +181,10 @@ b, strong { font-weight: 600; }
   gap: 12px;
 }
 
-.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+/* 品牌区永不收缩；导航区可收缩并在极端窄时换行，二者不再互相覆盖 */
+.brand { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .brand-mark { color: var(--green); display: flex; flex: none; }
-.brand-text { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.brand-text { display: flex; align-items: baseline; gap: 7px; flex: 0 0 auto; }
 .brand-text strong { font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
 .brand-text em {
   font-style: normal;
@@ -192,7 +195,12 @@ b, strong { font-weight: 600; }
   white-space: nowrap;
 }
 
-.topbar-nav { display: flex; gap: 6px; flex: none; }
+.topbar-nav {
+  display: flex; gap: 6px;
+  flex: 1 1 auto; min-width: 0;
+  flex-wrap: wrap; justify-content: flex-end;
+  align-items: center;
+}
 
 .nav-btn {
   border: 1px solid transparent;
