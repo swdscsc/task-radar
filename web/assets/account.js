@@ -23,6 +23,12 @@
   var session = null;
   var user = null;
   var mode = 'checking'; // checking | cloud | anon | local | nosdk
+
+  // “暂不登录”是否生效（记住选择，刷新后仍保持本设备模式）
+  var SKIP_KEY = 'taskradar_skip_login_v1';
+  function getSkip() { try { return localStorage.getItem(SKIP_KEY) === '1'; } catch (e) { return false; } }
+  function setSkip(v) { try { if (v) localStorage.setItem(SKIP_KEY, '1'); else localStorage.removeItem(SKIP_KEY); } catch (e) {} }
+
   var listeners = [];
   var notifCheckTimer = null;
 
@@ -79,6 +85,7 @@
       if (res.data) {
         session = res.data;
         user = (res.data && res.data.user) || null;
+        setSkip(false);
         setMode('cloud');
         cleanAddressBar();
       }
@@ -96,9 +103,11 @@
       if (res.data) {
         session = res.data;
         user = (res.data && res.data.user) || null;
+        setSkip(false); // 已恢复云端会话，清除“暂不登录”标记
         setMode('cloud');
       } else {
-        setMode('anon');
+        // 无会话：若之前选择了“暂不登录”，直接进入本设备模式，否则显示登录遮罩
+        setMode(getSkip() ? 'local' : 'anon');
       }
     }).catch(function () { setMode('anon'); });
   }
@@ -116,6 +125,7 @@
   }
 
   function signOut() {
+    setSkip(false); // 主动退出后，刷新应回到登录界面而非“暂不登录”
     return getCloud().auth.signOut().then(function () {
       session = null; user = null; setMode('anon');
     }).catch(function () { session = null; user = null; setMode('anon'); });
@@ -130,6 +140,7 @@
       if (res.error || !res.data) return { error: { message: '登录成功但无法读取会话' } };
       session = res.data;
       user = (res.data && res.data.user) || null;
+      setSkip(false);
       setMode('cloud');
       cleanAddressBar();
       return { data: true };
@@ -390,8 +401,8 @@
   function updateOverlay() {
     var ov = $('loginOverlay');
     if (!ov) return;
-    if (mode === 'anon' || mode === 'local') ov.hidden = false;
-    else ov.hidden = true;
+    // 仅“未决定（anon）”时显示登录遮罩；“暂不登录(local) / 已登录(cloud) / 无SDK(nosdk)”均隐藏
+    ov.hidden = (mode !== 'anon');
   }
   function showOverlay() {
     var ov = $('loginOverlay');
@@ -581,7 +592,11 @@
     var loginBtn = $('overlayLoginBtn');
     if (loginBtn) loginBtn.addEventListener('click', function () { signIn(); });
     var skipBtn = $('overlaySkipBtn');
-    if (skipBtn) skipBtn.addEventListener('click', function () { setMode('local'); });
+    if (skipBtn) skipBtn.addEventListener('click', function () {
+      setSkip(true);   // 记住“暂不登录”，刷新后仍保持本设备模式
+      setMode('local');
+      toast('已进入本设备模式：数据仅保存在当前浏览器', 'success');
+    });
     bindEmailLoginUI();
     // 绑定提醒中心
     var navRemind = $('navRemindBtn');
@@ -602,7 +617,8 @@
       if (handled) return;
       return restore().then(function () {
         if (mode === 'cloud') { hideOverlay(); startNotifLoop(); }
-        else { showOverlay(); }
+        else if (mode === 'anon') { showOverlay(); }
+        else { hideOverlay(); } // local / nosdk：直接进入本设备模式，不显示登录遮罩
       });
     });
   }
