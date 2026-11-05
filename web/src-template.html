@@ -616,9 +616,45 @@
     </div>
     <h2 class="login-title">登录以同步你的办事卡</h2>
     <p class="login-sub">登录后，你的办事卡与提醒会安全保存在云端，手机小程序和电脑网页实时互通，换设备也不丢失。</p>
-    <button type="button" class="btn btn-primary btn-block" id="overlayLoginBtn">使用 WorkBuddy 登录</button>
-    <button type="button" class="btn btn-ghost btn-block" id="overlaySkipBtn">暂不登录，仅本设备使用</button>
-    <p class="login-fine">仅本设备使用时，数据只存在当前浏览器，不会上传云端。</p>
+
+    <!-- 方式选择 -->
+    <div id="loginMethods">
+      <button type="button" class="btn btn-primary btn-block" id="overlayLoginBtn">使用 WorkBuddy 登录</button>
+      <button type="button" class="btn btn-ghost btn-block" id="overlayEmailBtn">用邮箱登录</button>
+      <button type="button" class="btn btn-ghost btn-block" id="overlaySkipBtn">暂不登录，仅本设备使用</button>
+      <p class="login-fine">仅本设备使用时，数据只存在当前浏览器，不会上传云端。</p>
+    </div>
+
+    <!-- 邮箱登录 -->
+    <div id="loginEmail" hidden>
+      <div class="seg">
+        <button type="button" class="seg-btn active" id="segOtp">验证码登录</button>
+        <button type="button" class="seg-btn" id="segPwd">密码登录</button>
+      </div>
+
+      <label class="field-label" for="emailInput">邮箱</label>
+      <input type="email" id="emailInput" class="field" placeholder="you@example.com" autocomplete="email" />
+
+      <div id="otpPanel">
+        <div class="otp-row">
+          <input type="text" id="codeInput" class="field" placeholder="6 位验证码" inputmode="numeric" maxlength="6" />
+          <button type="button" class="btn btn-ghost" id="sendCodeBtn">发送验证码</button>
+        </div>
+        <div id="otpPwdWrap" hidden>
+          <label class="field-label" for="otpPwdInput">设置密码（首次注册）</label>
+          <input type="password" id="otpPwdInput" class="field" placeholder="为账号设置登录密码" autocomplete="new-password" />
+        </div>
+      </div>
+
+      <div id="pwdPanel" hidden>
+        <label class="field-label" for="pwdInput">密码</label>
+        <input type="password" id="pwdInput" class="field" placeholder="账号密码" autocomplete="current-password" />
+      </div>
+
+      <button type="button" class="btn btn-primary btn-block" id="emailSubmitBtn">登录</button>
+      <button type="button" class="btn btn-ghost btn-block" id="emailBackBtn">返回</button>
+      <p class="login-fine" id="emailHint"></p>
+    </div>
   </div>
 </div>
 

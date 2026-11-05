@@ -121,6 +121,60 @@
     }).catch(function () { session = null; user = null; setMode('anon'); });
   }
 
+  // 邮箱格式校验
+  function isValidEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''); }
+
+  // 登录成功后从云端读取会话并写入本地状态
+  function restoreAndSet() {
+    return getCloud().auth.getSession().then(function (res) {
+      if (res.error || !res.data) return { error: { message: '登录成功但无法读取会话' } };
+      session = res.data;
+      user = (res.data && res.data.user) || null;
+      setMode('cloud');
+      cleanAddressBar();
+      return { data: true };
+    }).catch(function () { return { error: { message: '会话读取失败' } }; });
+  }
+
+  // 发送邮箱验证码；返回 { verificationId, isExistingUser }
+  function emailSendCode(email) {
+    if (!isValidEmail(email)) return Promise.resolve({ error: { message: '请输入有效邮箱地址' } });
+    return getCloud().auth.sendOtp({ email: email, usage: 'email' }).then(function (res) {
+      if (res.error) return { error: res.error };
+      return {
+        verificationId: (res.data && res.data.verificationId) || '',
+        isExistingUser: !!(res.data && res.data.isExistingUser)
+      };
+    }).catch(function (e) { return { error: { message: '验证码发送失败' } }; });
+  }
+
+  // 校验邮箱验证码；新用户需提供 password 完成注册
+  function emailVerifyCode(verificationId, token, email, isExistingUser, password) {
+    if (!verificationId) return Promise.resolve({ error: { message: '请先获取验证码' } });
+    if (!/^\d{4,8}$/.test(token || '')) return Promise.resolve({ error: { message: '请输入正确的验证码' } });
+    if (!isExistingUser && !password) return Promise.resolve({ error: { message: '首次使用请设置密码' } });
+    return getCloud().auth.verifyOtp({
+      verificationId: verificationId,
+      token: token,
+      email: email,
+      isExistingUser: isExistingUser,
+      password: isExistingUser ? undefined : password
+    }).then(function (res) {
+      if (res.error) return { error: res.error };
+      return restoreAndSet();
+    }).catch(function () { return { error: { message: '验证码校验失败' } }; });
+  }
+
+  // 邮箱 + 密码登录
+  function emailPasswordLogin(email, password) {
+    if (!isValidEmail(email)) return Promise.resolve({ error: { message: '请输入有效邮箱地址' } });
+    if (!password) return Promise.resolve({ error: { message: '请输入密码' } });
+    return getCloud().auth.signInWithPassword({ email: email, password: password }).then(function (res) {
+      if (res.error) return { error: res.error };
+      return restoreAndSet();
+    }).catch(function () { return { error: { message: '登录失败' } }; });
+  }
+
   /* ---------------- 办事卡（云端） ---------------- */
 
   function listCards() {
@@ -415,6 +469,109 @@
 
   /* ---------------- 启动 ---------------- */
 
+  /* ---------------- 邮箱登录 UI 控制 ---------------- */
+
+  function bindEmailLoginUI() {
+    var methods = $('loginMethods');
+    var emailView = $('loginEmail');
+    if (!methods || !emailView) return;
+
+    var emailInput = $('emailInput');
+    var otpPanel = $('otpPanel');
+    var pwdPanel = $('pwdPanel');
+    var segOtp = $('segOtp');
+    var segPwd = $('segPwd');
+    var sendBtn = $('sendCodeBtn');
+    var codeInput = $('codeInput');
+    var otpPwdWrap = $('otpPwdWrap');
+    var otpPwdInput = $('otpPwdInput');
+    var pwdInput = $('pwdInput');
+    var submitBtn = $('emailSubmitBtn');
+    var backBtn = $('emailBackBtn');
+    var hint = $('emailHint');
+
+    var pending = { verificationId: '', isExistingUser: true };
+    var cooldownTimer = null;
+
+    function showEmail() { methods.hidden = true; emailView.hidden = false; if (hint) hint.textContent = ''; }
+    function showMethods() { emailView.hidden = true; methods.hidden = false; }
+
+    function setModeSegment(mode) {
+      var otp = mode === 'otp';
+      if (segOtp) segOtp.classList.toggle('active', otp);
+      if (segPwd) segPwd.classList.toggle('active', !otp);
+      if (otpPanel) otpPanel.hidden = !otp;
+      if (pwdPanel) pwdPanel.hidden = otp;
+    }
+
+    var emailBtn = $('overlayEmailBtn');
+    if (emailBtn) emailBtn.addEventListener('click', showEmail);
+    if (backBtn) backBtn.addEventListener('click', showMethods);
+    if (segOtp) segOtp.addEventListener('click', function () { setModeSegment('otp'); });
+    if (segPwd) segPwd.addEventListener('click', function () { setModeSegment('pwd'); });
+
+    if (sendBtn) sendBtn.addEventListener('click', function () {
+      var email = (emailInput && emailInput.value || '').trim();
+      if (!isValidEmail(email)) { if (hint) hint.textContent = '请输入有效邮箱地址'; return; }
+      sendBtn.disabled = true;
+      if (hint) hint.textContent = '正在发送验证码…';
+      emailSendCode(email).then(function (r) {
+        if (r.error) {
+          if (hint) hint.textContent = (r.error && r.error.message) || '发送失败';
+          sendBtn.disabled = false;
+          return;
+        }
+        pending.verificationId = r.verificationId;
+        pending.isExistingUser = r.isExistingUser;
+        if (otpPwdWrap) otpPwdWrap.hidden = r.isExistingUser;
+        if (hint) hint.textContent = r.isExistingUser
+          ? '验证码已发送到 ' + email + '，请查收邮件。'
+          : '该邮箱未注册，验证码验证后请设置密码完成注册。';
+        if (codeInput) codeInput.focus();
+        // 60s 冷却
+        var left = 60;
+        sendBtn.textContent = left + 's 后重发';
+        cooldownTimer = setInterval(function () {
+          left -= 1;
+          if (left <= 0) {
+            clearInterval(cooldownTimer); cooldownTimer = null;
+            sendBtn.disabled = false;
+            sendBtn.textContent = '重新发送';
+          } else {
+            sendBtn.textContent = left + 's 后重发';
+          }
+        }, 1000);
+      });
+    });
+
+    if (submitBtn) submitBtn.addEventListener('click', function () {
+      var email = (emailInput && emailInput.value || '').trim();
+      if (!isValidEmail(email)) { if (hint) hint.textContent = '请输入有效邮箱地址'; return; }
+      // 判断当前选中的分栏：验证码 or 密码
+      var useOtp = otpPanel && !otpPanel.hidden;
+      if (useOtp) {
+        var code = (codeInput && codeInput.value || '').trim();
+        var pwd = (otpPwdInput && otpPwdInput.value || '').trim();
+        submitBtn.disabled = true;
+        if (hint) hint.textContent = '正在验证…';
+        emailVerifyCode(pending.verificationId, code, email, pending.isExistingUser, pwd).then(function (r) {
+          submitBtn.disabled = false;
+          if (r.error) { if (hint) hint.textContent = (r.error && r.error.message) || '验证失败'; return; }
+          if (hint) hint.textContent = '';
+        });
+      } else {
+        var password = (pwdInput && pwdInput.value || '').trim();
+        submitBtn.disabled = true;
+        if (hint) hint.textContent = '正在登录…';
+        emailPasswordLogin(email, password).then(function (r) {
+          submitBtn.disabled = false;
+          if (r.error) { if (hint) hint.textContent = (r.error && r.error.message) || '登录失败'; return; }
+          if (hint) hint.textContent = '';
+        });
+      }
+    });
+  }
+
   function init() {
     if (!window.WorkBuddyCloud || !window.WorkBuddyCloud.createWorkBuddyCloud) {
       setMode('nosdk');
@@ -425,6 +582,7 @@
     if (loginBtn) loginBtn.addEventListener('click', function () { signIn(); });
     var skipBtn = $('overlaySkipBtn');
     if (skipBtn) skipBtn.addEventListener('click', function () { setMode('local'); });
+    bindEmailLoginUI();
     // 绑定提醒中心
     var navRemind = $('navRemindBtn');
     if (navRemind) navRemind.addEventListener('click', openReminderCenter);
@@ -470,6 +628,9 @@
     init: init,
     signIn: signIn,
     signOut: signOut,
+    emailSendCode: emailSendCode,
+    emailVerifyCode: emailVerifyCode,
+    emailPasswordLogin: emailPasswordLogin,
     getMode: getMode,
     getUser: getUser,
     getSession: getSession,
