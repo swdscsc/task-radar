@@ -50,14 +50,22 @@ task-radar/
 
 ## 本地运行
 
-### 网页版
-任意静态服务器即可，例如：
+### 网页版（本地开发）
+源码是多文件结构，直接静态托管 `web/` 即可本地预览：
 ```bash
 cd web
 python3 -m http.server 8080
 # 打开 http://localhost:8080
 ```
 > 登录/云端功能依赖 `assets/account.js` 中的 `endpoint` 与 `publishableKey`（公开可提交，非密钥）。
+
+### 网页版（构建为单文件再部署）
+WorkBuddy Sites 的网关会把 `/assets/*` 等所有路径重写回入口 `index.html`，导致多文件静态站点无法加载 JS/CSS。故部署前需把资源内联成单文件：
+```bash
+cd web
+python3 build.py        # 读取 src-template.html + assets/ + vendor/ → 生成单文件 index.html
+```
+生成的 `index.html` 即为可直接部署到 WorkBuddy Sites（`language: static`）的产物，零外部请求。
 
 ### 微信小程序
 用**微信开发者工具**打开 `miniprogram/` 目录即可预览。
