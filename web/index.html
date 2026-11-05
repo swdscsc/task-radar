@@ -1780,6 +1780,9 @@ select.text-input { appearance: none; background-image: linear-gradient(45deg, t
   -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   padding: 20px;
 }
+/* 关键：作者样式的 display:flex 会覆盖浏览器默认的 [hidden]{display:none}，
+   必须显式补上，否则 JS 设置 hidden=true 时遮罩仍然显示（登录/暂不登录后无法关闭）。 */
+.login-overlay[hidden] { display: none; }
 .login-card {
   width: 100%; max-width: 380px;
   background: var(--surface, #fff);
@@ -2423,7 +2426,7 @@ select.text-input { appearance: none; background-image: linear-gradient(45deg, t
 </aside>
 
 <!-- ============ 登录遮罩 ============ -->
-<div class="login-overlay" id="loginOverlay" hidden>
+<div class="login-overlay" id="loginOverlay" hidden style="display:none">
   <div class="login-card">
     <div class="login-brand">
       <span class="brand-mark" aria-hidden="true">
@@ -6853,20 +6856,21 @@ window.TASKCARD_SAMPLES = [
     }
   }
 
-  function updateOverlay() {
+  // 统一控制登录遮罩显隐：hidden 属性 + 内联 display 双保险。
+  // 只设 hidden 不够——.login-overlay 的 display:flex 会覆盖 UA 的 [hidden] 规则，
+  // 导致遮罩永远关不掉（表现为“登录后/暂不登录后页面卡在登录界面”）。
+  function setOverlayVisible(show) {
     var ov = $('loginOverlay');
     if (!ov) return;
+    ov.hidden = !show;
+    ov.style.display = show ? '' : 'none';
+  }
+  function updateOverlay() {
     // 仅“未决定（anon）”时显示登录遮罩；“暂不登录(local) / 已登录(cloud) / 无SDK(nosdk)”均隐藏
-    ov.hidden = (mode !== 'anon');
+    setOverlayVisible(mode === 'anon');
   }
-  function showOverlay() {
-    var ov = $('loginOverlay');
-    if (ov) ov.hidden = false;
-  }
-  function hideOverlay() {
-    var ov = $('loginOverlay');
-    if (ov) ov.hidden = true;
-  }
+  function showOverlay() { setOverlayVisible(true); }
+  function hideOverlay() { setOverlayVisible(false); }
 
   function openReminderCenter() {
     refreshReminderCenter();

@@ -398,20 +398,21 @@
     }
   }
 
-  function updateOverlay() {
+  // 统一控制登录遮罩显隐：hidden 属性 + 内联 display 双保险。
+  // 只设 hidden 不够——.login-overlay 的 display:flex 会覆盖 UA 的 [hidden] 规则，
+  // 导致遮罩永远关不掉（表现为“登录后/暂不登录后页面卡在登录界面”）。
+  function setOverlayVisible(show) {
     var ov = $('loginOverlay');
     if (!ov) return;
+    ov.hidden = !show;
+    ov.style.display = show ? '' : 'none';
+  }
+  function updateOverlay() {
     // 仅“未决定（anon）”时显示登录遮罩；“暂不登录(local) / 已登录(cloud) / 无SDK(nosdk)”均隐藏
-    ov.hidden = (mode !== 'anon');
+    setOverlayVisible(mode === 'anon');
   }
-  function showOverlay() {
-    var ov = $('loginOverlay');
-    if (ov) ov.hidden = false;
-  }
-  function hideOverlay() {
-    var ov = $('loginOverlay');
-    if (ov) ov.hidden = true;
-  }
+  function showOverlay() { setOverlayVisible(true); }
+  function hideOverlay() { setOverlayVisible(false); }
 
   function openReminderCenter() {
     refreshReminderCenter();

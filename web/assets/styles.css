@@ -1759,6 +1759,9 @@ select.text-input { appearance: none; background-image: linear-gradient(45deg, t
   -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   padding: 20px;
 }
+/* 关键：作者样式的 display:flex 会覆盖浏览器默认的 [hidden]{display:none}，
+   必须显式补上，否则 JS 设置 hidden=true 时遮罩仍然显示（登录/暂不登录后无法关闭）。 */
+.login-overlay[hidden] { display: none; }
 .login-card {
   width: 100%; max-width: 380px;
   background: var(--surface, #fff);
